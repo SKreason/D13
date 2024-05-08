@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
+import logging
 import os
 from pathlib import Path
+
 # from safepass import PASS
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,6 +29,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 SITE_ID = 1
+
+logger = logging.getLogger('django')
 
 # Application definition
 
@@ -189,3 +193,111 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Yekaterinburg'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'style': '{',
+    # фильтры по DEBUG=TRUE/FALSE
+    'filters': {
+        'require_debug_true': {
+            "()": "django.utils.log.RequireDebugTrue",
+        },
+        'require_debug_false': {
+            "()": "django.utils.log.RequireDebugFalse",
+        },
+    },
+    'formatters': {
+        # DEBUG формат
+        'form_debug': {
+            'format': '%(asctime)s %(levelname)s %(message)s'
+        },
+        # WARNING формат
+        'form_warning': {
+            'format': '%(asctime)s %(levelname)s %(message)s %(pathname)s'
+        },
+        # ERROR & CRITICAL формат
+        'form_error_critical': {
+            'format': '%(asctime)s %(levelname)s %(message)s %(pathname)s %(exc_info)s'
+        },
+        # SECURITY формат
+        'form_security': {
+            'format': '%(asctime)s %(levelname)s %(module)s %(message)s'
+        },
+        # MAIL формат
+        'form_mail': {
+            'format': '%(asctime)s %(levelname)s %(message)s %(pathname)s'
+        },
+    },
+    'handlers': {
+        'console_debug': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'form_debug'
+        },
+        'console_warning': {
+            'level': 'WARNING',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'form_warning'
+        },
+        'console_error_critical': {
+            'level': 'ERROR',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'form_error_critical'
+        },
+        'file_general': {
+            'level': 'INFO',
+            'filters': ['require_debug_false'],
+            'class': 'logging.FileHandler',
+            'filename': 'logs/general.log',
+            'formatter': 'form_security'
+        },
+        'file_errors': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/errors.log',
+            'formatter': 'form_error_critical'
+        },
+        'file_security': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/security.log',
+            'formatter': 'form_security'
+        },
+        'mail_send': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler',
+            'formatter': 'form_mail'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console_debug', 'console_warning', 'console_error_critical', 'file_general'],
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['file_errors'],
+            'propagate': True,
+        },
+        'django.server': {
+            'handlers': ['file_errors', 'mail_send'],
+            'propagate': True,
+        },
+        'django.template': {
+            'handlers': ['file_errors'],
+            'propagate': True,
+        },
+        'django.db_backends': {
+            'handlers': ['file_errors'],
+            'propagate': True,
+        },
+        'django.security': {
+            'handlers': ['file_security', 'mail_send'],
+            'propagate': True,
+        },
+    }
+}
